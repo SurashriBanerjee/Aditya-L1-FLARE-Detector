@@ -1,0 +1,43 @@
+Environments
+
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+Python caching
+
+pycache/
+*.py[cod]
+*$py.class
+
+Jupyter Notebook checkpoints
+
+.ipynb_checkpoints
+
+ML & Data specific (Don't upload heavy data to GitHub!)
+
+*.csv
+*.dat
+*.cdf
+*.fits
+*.hdf5
+*.h5
+*.pkl
+*.pt
+*.pth
+/data_pipeline/raw_data/
+/ml_engine/saved_models/
+
+OS generated files
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
