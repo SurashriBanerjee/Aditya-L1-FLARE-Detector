@@ -2,6 +2,7 @@ import os
 import glob
 import zipfile
 import pandas as pd
+import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
@@ -11,92 +12,75 @@ RAW_DATA_DIR = os.path.join(BASE_DIR, "raw_data")
 
 def extract_zips():
     """Finds any .zip files in the raw_data folder and extracts them."""
-    # Added recursive=True and "**" so it digs into the folders you dragged in!
     zip_files = glob.glob(os.path.join(RAW_DATA_DIR, "**", "*.zip"), recursive=True)
     
     for zip_path in zip_files:
-        # Create a folder name based on the zip file name
         extract_folder = zip_path.replace(".zip", "")
-        
-        # Only extract if we haven't already
         if not os.path.exists(extract_folder):
-            print(f"📦 Extracting {os.path.basename(zip_path)}...")
+            print(f"📦 Auto-Extracting {os.path.basename(zip_path)}...")
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(extract_folder)
 
 def find_and_load_data(instrument_code, instrument_name):
     """
-    Generic function to find extracted data files.
-    instrument_code: 'SLX' or 'SOLEXS' for SoLEXS, 'HLS' or 'hel1os' for HEL1OS
+    Finds and loads data files for the range April 2024 - June 2024.
+    Returns a concatenated DataFrame of all matching files in that period.
     """
-    print(f"\nLooking for {instrument_name} data...")
+    print(f"\nLooking for {instrument_name} data (Apr-Jun 2024)...")
     
-    # Get ALL files in raw_data (recursively)
+    extract_zips()
+    
     all_items = glob.glob(os.path.join(RAW_DATA_DIR, "**", "*"), recursive=True)
-    
-    files = []
-    # Force lowercase for easier searching since ISRO's naming can be inconsistent
+    matching_files = []
     search_code = instrument_code.lower()
+    
+    # Filter files by name/extension and date pattern (202404, 202405, 202406)
+    valid_months = ['202404', '202405', '202406']
     
     for item in all_items:
         item_lower = item.lower()
         if os.path.isfile(item) and not item_lower.endswith('.zip'):
-            # Looking for SLX, SOLEXS, HLS, or HEL1OS in the file path
             if search_code in item_lower or instrument_name.lower() in item_lower:
                 if not item_lower.endswith(('.xml', '.txt', '.pdf', '.png')):
-                    files.append(item)
+                    if any(month in item_lower for month in valid_months):
+                        matching_files.append(item)
                 
-    if not files:
-        print(f"❌ No {instrument_name} files found! Did you download and put the zips in raw_data/?")
+    if not matching_files:
+        print(f"❌ No {instrument_name} files found for Apr-Jun 2024!")
         return None
-        
-    print(f"✅ Found {len(files)} {instrument_name} data files!")
+            
+    print(f"📄 Found {len(matching_files)} files for the target period.")
     
-    first_file = files[0]
-    print(f"📄 Looking inside the first file: {os.path.basename(first_file)}")
-    
-    # Try to load it if it's a standard format, otherwise just return the path
-    if first_file.endswith('.csv'):
-        return pd.read_csv(first_file)
-    elif first_file.endswith('.parquet'):
-        return pd.read_parquet(first_file)
-    elif first_file.endswith(('.fits', '.fits.gz', '.lc', '.lc.gz')):
-        print(f"🔭 Parsing {instrument_name} astronomical file using Astropy...")
+    data_frames = []
+    for target_file in matching_files:
         try:
-            # Astropy can open FITS and even uncompress .gz files on the fly!
-            with fits.open(first_file) as hdul:
-                print(f"📊 Internal Structure of {instrument_name} file:")
-                hdul.info()
-                
-                # In ISRO/NASA FITS files, index 0 is usually just metadata headers.
-                # Index 1 usually contains the actual binary table of time-series data.
-                data_table = Table(hdul[1].data)
-                
-                # Convert it to a Pandas DataFrame so it's easy for Machine Learning!
-                df = data_table.to_pandas()
-                print(f"✅ Successfully converted to Pandas DataFrame! Shape: {df.shape}")
-                
-                # Print the first few columns so we can see what variables we have
-                print(f"Columns found: {list(df.columns)[:5]}...")
-                
-                return df
+            print(f"🔭 Parsing: {os.path.basename(target_file)}")
+            if target_file.endswith('.csv'):
+                df = pd.read_csv(target_file)
+                data_frames.append(df)
+            
+            elif target_file.endswith(('.fits', '.fits.gz', '.pi', '.pi.gz')):
+                with fits.open(target_file) as hdul:
+                    for hdu in hdul:
+                        if isinstance(hdu, (fits.BinTableHDU, fits.TableHDU)):
+                            df = Table(hdu.data).to_pandas()
+                            if 'COUNTS' in df.columns and df['COUNTS'].dtype == 'object':
+                                df['COUNTS'] = df['COUNTS'].apply(lambda x: np.sum(x) if isinstance(x, (list, np.ndarray)) else x)
+                                df['COUNTS'] = pd.to_numeric(df['COUNTS'])
+                            data_frames.append(df)
+                            break # Assume first table is the primary one
         except Exception as e:
-            print(f"❌ Error reading FITS/LC file: {e}")
-            return first_file
-    else:
-        print(f"⚠️ Note: File is a '{first_file.split('.')[-1]}' format. We may need a specific parser.")
-        return first_file
+            print(f"❌ Error reading {os.path.basename(target_file)}: {e}")
+
+    if data_frames:
+        print(f"✅ Successfully combined {len(data_frames)} files.")
+        return pd.concat(data_frames, ignore_index=True)
+    
+    return None
 
 if __name__ == "__main__":
-    # Ensure the directory exists
     if not os.path.exists(RAW_DATA_DIR):
         os.makedirs(RAW_DATA_DIR)
-        print(f"Created directory: {RAW_DATA_DIR}")
-        print("Please drag and drop your downloaded ISRO .zip files here!")
     else:
-        # 1. Unzip anything that was just downloaded
-        extract_zips()
-        
-        # 2. Try finding the datasets
         solexs_data = find_and_load_data("SOLEXS", "SoLEXS")
         helios_data = find_and_load_data("hel1os", "HEL1OS")
