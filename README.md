@@ -1,106 +1,160 @@
-☀️ Aditya-L1 Solar Flare Early Warning System (S.F.E.W.S)
+<div align="center">
 
-Welcome to S.F.E.W.S! This project is a real-time, AI-driven mission control dashboard designed to predict catastrophic solar flares using data from ISRO's Aditya-L1 spacecraft.
+# ☀️ S.F.E.W.S
+### Aditya-L1 Solar Flare Early Warning System
 
-When a massive X-Class solar flare hits Earth, it can cause global radio blackouts, cripple GPS systems, and damage power grids. By analyzing X-ray emissions from the sun, this system gives us the crucial warning time needed to brace for impact.
+**A real-time, AI-driven mission control dashboard predicting catastrophic solar flares using live telemetry from ISRO's Aditya-L1 spacecraft.**
 
-🚀 What does it do?
+*Built for the Bhartiya Antariksh Hackathon 2024*
 
-Ingests Space Data: It processes raw ISRO PRADAN data from two specific Aditya-L1 instruments:
+</div>
 
-SoLEXS: Measures soft X-rays (thermal plasma buildup).
+---
 
-HEL1OS: Measures hard X-rays (non-thermal explosions).
+## 🌌 Overview
 
-Thinks like an Astrophysicist: The AI is grounded in real solar physics ( specifically the Neupert Effect). It doesn't just look at numbers; it looks at the rate of change and the ratio between soft and hard X-rays.
+When a massive **X-Class solar flare** hits Earth, it can trigger global radio blackouts, cripple GPS systems, and damage power grids. By analyzing X-ray emissions from the sun in real time, S.F.E.W.S gives us the crucial early-warning window needed to brace for impact.
 
-Predicts the Future: A Random Forest Machine Learning model evaluates the telemetry and predicts the probability of a flare occurring within the next 30 minutes.
+> ⚡ **TL;DR** — Aditya-L1 sensor data → physics-informed feature engineering → Random Forest prediction → immersive 3D mission-control dashboard.
 
-Visualizes the Threat: The frontend is a fully immersive "Mission Control" UI featuring a live 3D simulation of Earth's magnetic shield reacting to solar pressure, complete with audio sonification (Geiger counter effects).
+---
 
-🛠️ Tech Stack
+## 🚀 What Does It Do?
 
-Backend / ML Engine: Python, FastAPI, Scikit-Learn, Pandas, NumPy
+| Capability | Description |
+|---|---|
+| 🛰️ **Ingests Space Data** | Processes raw ISRO PRADAN data from two Aditya-L1 instruments — **SoLEXS** (soft X-rays / thermal buildup) and **HEL1OS** (hard X-rays / non-thermal explosions) |
+| 🧠 **Thinks Like an Astrophysicist** | Grounded in real solar physics (the **Neupert Effect**) — evaluates rate-of-change and soft/hard X-ray ratios, not just raw values |
+| 🔮 **Predicts the Future** | A **Random Forest** model estimates the probability of a flare occurring within the **next 30 minutes** |
+| 🌍 **Visualizes the Threat** | An immersive "Mission Control" UI with a live **3D magnetosphere simulation** and Geiger-counter-style audio sonification |
 
-Frontend: HTML5, Tailwind CSS, JavaScript (Vanilla)
+---
 
-Visualizations: Three.js (3D Magnetosphere), Observable Plot / D3.js (Telemetry charts)
+## 🧠 How the AI Works
 
-Data Source: ISRO PRADAN (Aditya-L1 Mission Data)
+```
+   Quiet Sun Baseline          Extreme Event Anchor
+  ┌─────────────────┐        ┌──────────────────────┐
+  │  Noise Floor     │        │  Rapid ΔSoft X-ray    │
+  │  (normal solar   │  +     │  + Hard X-ray burst   │
+  │   background)    │        │  = Neupert signature  │
+  └─────────────────┘        └──────────────────────┘
+              │                         │
+              └───────────┬─────────────┘
+                           ▼
+                 🌲 Random Forest Model
+                           ▼
+                 🚨 X-Class Flare Alert
+```
 
-🧠 How the AI Works (The Science)
+The model is trained on thousands of minutes of baseline telemetry to learn what "quiet sun" looks like, then anchored with extreme out-of-distribution events. When soft X-ray counts spike rapidly **and** hard X-rays burst simultaneously, the model flags an impending X-Class flare and triggers system lockdown.
 
-Most of the time, the sun is quiet. To train our AI, we parsed thousands of minutes of baseline data and applied a statistical Noise Floor. We taught the AI that standard background radiation is normal.
+---
 
-However, we also anchored the model with Extreme Out-of-Distribution Events. When the AI sees a massive spike in the derivative of the soft X-ray count (meaning the sun is rapidly heating up) coupled with a sudden burst in hard X-rays, the Random Forest model flags an impending X-Class flare and triggers the system lockdown.
+## 🛠️ Tech Stack
 
-💻 How to Run It Locally
+<div align="center">
 
-Everything is modular and designed to run smoothly on your local machine.
+| Layer | Technologies |
+|---|---|
+| **Backend / ML Engine** | Python · FastAPI · Scikit-Learn · Pandas · NumPy |
+| **Frontend** | HTML5 · Tailwind CSS · Vanilla JavaScript |
+| **Visualizations** | Three.js (3D Magnetosphere) · Observable Plot / D3.js (Telemetry) |
+| **Data Source** | ISRO PRADAN — Aditya-L1 Mission Data |
 
-1. Prerequisites
+</div>
 
-Make sure you have Python 3.x installed. Then, install the required dependencies:
+---
 
+## 💻 Getting Started
+
+### 1️⃣ Prerequisites
+
+Requires **Python 3.x**. Install dependencies:
+
+```bash
 pip install fastapi uvicorn pandas scikit-learn joblib pydantic astropy
+```
 
+### 2️⃣ Train the Model *(optional but recommended)*
 
-2. Train the Model (Optional but recommended)
+Generates the "brain" of the system — `flare_predictor_v1.pkl`:
 
-We need to generate the "brain" of the system (flare_predictor_v1.pkl).
-From the root of the project, run:
-
+```bash
 python ml_engine/train_model.py
+```
 
+> This parses the dataset, applies the noise floor, injects the extreme-event calibration anchor, and saves the compiled model.
 
-Note: This will parse the dataset, apply the noise floor, inject our extreme event calibration anchor, and save the compiled model.
+### 3️⃣ Start the Backend API
 
-3. Start the Backend API
-
-The FastAPI server acts as the bridge between the AI model and the dashboard.
-
+```bash
 python backend/main.py
+```
 
+The API will be live at **`http://localhost:8000`**.
 
-The API will start running on http://localhost:8000.
+### 4️⃣ Launch Mission Control (Frontend)
 
-4. Launch Mission Control (Frontend)
+No web server needed — just double-click **`index.html`** to open it in Chrome, Firefox, or Safari. 🎉
 
-Because the frontend is pure HTML/JS/CSS, you don't need a web server to view it!
-Just double-click the index.html file in your file explorer to open it in Chrome, Firefox, or Safari.
+---
 
-🎮 The "Demo" Mode (Inject Anomaly)
+## 🎮 Demo Mode — "Inject Anomaly"
 
-Because the sun is quiet 99% of the time, staring at a nominal dashboard during a presentation isn't very exciting.
+Since the sun is quiet 99% of the time, a nominal dashboard doesn't make for the most thrilling demo. Click **Inject Anomaly** to safely simulate an apocalyptic thermal buildup:
 
-We built an "Inject Anomaly" button into the dashboard. Clicking this safely simulates an apocalyptic thermal buildup.
+```
+[ Inject Anomaly ]
+        │
+        ▼
+Translates graph data → raw ISRO sensor counts
+        │
+        ▼
+Applies low-pass filter (removes UI jitter)
+        │
+        ▼
+Sends clamped simulated data to Python backend
+        │
+        ▼
+AI detects Neupert Effect signature
+        │
+        ▼
+🚨 CRITICAL state → audio alarms → magnetosphere compresses
+```
 
-The dashboard translates the visual graph data into raw ISRO sensor counts.
+Click **Reset** to return to normal operations.
 
-It applies a signal smoother (low-pass filter) to remove UI jitter.
+---
 
-It sends this clamped, simulated data to the Python backend.
+## 📂 Project Structure
 
-The AI detects the massive Neupert Effect signature, latches the system into a CRITICAL state, triggers the audio alarms, and visually compresses the 3D Earth magnetosphere.
-
-To return to normal operations, simply click Reset.
-
-📂 Project Structure
-
+```
 ├── backend/
 │   ├── main.py             # FastAPI entry point
 │   ├── routes.py           # API endpoints
 │   └── config.py           # Environment configurations
+│
 ├── data_pipeline/
 │   ├── fetch_pradan.py     # ISRO data downloader & parser
 │   └── preprocess.py       # Cleans and aligns SoLEXS/HEL1OS data
+│
 ├── ml_engine/
 │   ├── train_model.py      # Random forest training script
 │   ├── inference.py        # Connects the model to the API
 │   ├── physics_rules.py    # Astrophysics math (Neupert effect)
 │   └── explainability.py   # XAI (Explainable AI) logic
+│
 ├── index.html              # The Mission Control Dashboard
 └── requirements.txt        # Python dependencies
+```
 
+---
 
-Built with ❤️ for the Bhartiya Antariksh Hackathon 2024.
+<div align="center">
+
+**Built with ❤️ for the Bhartiya Antariksh Hackathon 2026**
+
+☀️ 🛰️ 🌍 📡 🚨
+
+</div>
