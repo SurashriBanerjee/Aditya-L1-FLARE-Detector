@@ -5,7 +5,7 @@
 
 **A real-time, AI-driven mission control dashboard predicting catastrophic solar flares using live telemetry from ISRO's Aditya-L1 spacecraft.**
 
-*Built for the Bhartiya Antariksh Hackathon 2024*
+*Built for the Bhartiya Antariksh Hackathon 2026*
 
 </div>
 
